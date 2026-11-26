@@ -86,6 +86,9 @@ tbody tr { cursor: pointer; }
 tbody tr:hover { background: var(--surface); }
 tbody tr[data-selected="true"] { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rank { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; font-weight: 600; }
+.rank.top3 { background: var(--accent); color: #fff; }
+.rank.top10 { border: 1.5px solid var(--accent); color: var(--accent); }
 .name { display: grid; gap: 2px; }
 .name b { font-weight: 600; }
 .sub { color: var(--muted); font-size: 12px; }

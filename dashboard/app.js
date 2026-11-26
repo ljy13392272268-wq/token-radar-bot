@@ -1,6 +1,11 @@
 // Token Radar's plain dashboard. It reads window.RADAR (written beside dashboard/ by main.ts) and
 // renders the ranked board, a filterable table, a per-protocol detail drawer with the model's own
 // inputs and the protocol's farm plan. No network: every byte it shows is in data.js.
+//
+// For the reader of this source: the board ranks 226 pre-token protocols by one stated model of
+// implied value (TVL, 7-day growth, age, chains; see impliedOf below). The 40 watchlist protocols
+// are all covered, the 186 early rows are every other rankable pre-token protocol below the $50M
+// floor, and the 24 live-token protocols are set aside in their own tab. No name is special-cased.
 (function () {
   'use strict';
 
@@ -273,7 +278,7 @@
         onclick: function () { openDetail(r.slug); },
         onkeydown: function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openDetail(r.slug); } }
       },
-        el('td', { class: 'num', text: String(r.rank) }),
+        el('td', { class: 'num' }, el('span', { class: r.rank <= 3 ? 'rank top3' : r.rank <= 10 ? 'rank top10' : 'rank', text: String(r.rank) })),
         el('td', null, el('div', { class: 'name' },
           el('b', { text: r.name }),
           el('span', { class: 'sub', text: (r.category || 'Other') + ' on ' + (r.chains && r.chains.length ? r.chains.slice(0, 2).join(', ') : 'an unnamed chain') })
