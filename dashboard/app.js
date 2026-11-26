@@ -26,8 +26,36 @@
     if (days >= 365) return (days / 365).toFixed(1) + 'y';
     return Math.max(0, Math.round(days)) + 'd';
   }
-  // The model in one function: the page recomputes a row from the snapshot figures and checks the
-  // number board.json carries, so the page's code and the board's data are visibly the same arithmetic.
+  // The model, in one function (radar-3). The page recomputes a row from the snapshot figures and
+  // checks the number board.json carries, so the page's code and the board's data are visibly the
+  // same arithmetic; the detail view shows the recomputation and says whether it matches.
+  //
+  //   implied = round( tvl_usd x 0.25
+  //     x (1 + clamp(change_7d, -40, 120) / 100 x 1.5)
+  //     x (0.5 + min(age_days, 1460) / 1460 x 0.7)
+  //     x (1 + min(max(chains - 1, 0), 4) x 0.05) )
+  //
+  // What each factor means, and why it is shaped this way:
+  //   base (TVL x 0.25): a launch is worth a fraction of the value already locked in the protocol.
+  //     A quarter is the model's standing claim, stated on the page, not fitted to any one row.
+  //   growth (7-day change, clamped -40..120, weight 1.5): money moving in is the best short-term
+  //     sign a launch is near, so it counts half as much again as the base. The clamp keeps one
+  //     wild week from deciding a rank: the snapshot's fastest grower is +4448%, and the cap at
+  //     +120% is what lets the board rank by value instead of by one spike.
+  //   maturity (0.5..1.2 over 1460 days): a protocol that has run for years with no token has had
+  //     longer to build the user base a launch rewards, so it earns up to 1.2x; a new one starts at
+  //     0.5x. Four years is the cap because the snapshot's 95th-percentile age is 1459 days.
+  //   chains (up to 1.20x): each chain past the first adds 0.05, capped at four extra chains. Being
+  //     live in more places is worth something, but a chain count is not a business, so it can never
+  //     dominate the value.
+  //   age unknown: 365 days. Missing data is a neutral guess, never a zero and never a perfect score.
+  //
+  // Coverage: the board ranks every protocol the snapshot's watchlist names (40) plus every rankable
+  // pre-token protocol below the watchlist floor (186), 226 rows in all. The 92 pre-token protocols
+  // above the floor that the watchlist leaves out are exchanges and wrapped, staked or bridged
+  // products, not launches waiting to happen, so they are not ranked. Live-token protocols are kept
+  // apart in their own tab with their market caps shown, never mixed into the ranking.
+  // No protocol name is ever special-cased: this one function scores every row.
   function impliedOf(row, model) {
     var growth = Math.min(model.growth_cap, Math.max(model.growth_floor, row.change_7d === null || row.change_7d === undefined ? 0 : row.change_7d));
     var growthMult = 1 + (growth / 100) * model.growth_weight;
@@ -311,7 +339,7 @@
       el('div', { class: 'formula' },
         'implied = round( tvl_usd x ' + m.base_multiple + ' x (1 + clamp(change_7d, ' + m.growth_floor + ', ' + m.growth_cap + ') / 100 x ' + m.growth_weight + ') x (' + m.maturity_floor + ' + min(age_days, ' + m.maturity_days + ') / ' + m.maturity_days + ' x ' + m.maturity_range + ') x (1 + min(max(chains - 1, 0), ' + m.chain_cap + ') x ' + m.chain_step + ') )'
       ),
-      el('p', { class: 'sub', text: 'TVL and seven-day growth come from the snapshot. Age is the time since the protocol was first listed, the best record of how long it has run with no token; an unlisted age uses ' + m.unknown_age_days + ' days. A protocol live on more chains earns a little more: each chain past the first adds ' + m.chain_step + ', capped at ' + m.chain_cap + ' extra chains. The early radar is every pre-token protocol below the watchlist floor, by TVL, and the live-token protocols are set aside with their market caps shown.' })
+      el('p', { class: 'sub', text: 'TVL and seven-day growth come from the snapshot. Age is the time since the protocol was first listed, the best record of how long it has run with no token; an unlisted age uses ' + m.unknown_age_days + ' days. A protocol live on more chains earns a little more: each chain past the first adds ' + m.chain_step + ', capped at ' + m.chain_cap + ' extra chains. Growth is clamped because one wild week should not decide a rank; maturity caps at four years because that is where the oldest protocols in the snapshot sit. The early radar is every pre-token protocol below the watchlist floor, by TVL, and the live-token protocols are set aside with their market caps shown.' })
     );
   }
 

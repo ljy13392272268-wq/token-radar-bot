@@ -1,7 +1,9 @@
 // The token radar's model: one snapshot of the protocol universe in, one ranked board out.
 //
-// The board covers every slug in the snapshot's watchlist (the floor, never a ceiling) and may add
-// pre-token protocols below the watchlist floor: the early rows the radar exists to find. A protocol is
+// The board covers every slug in the snapshot's watchlist (the floor, never a ceiling) and every
+// rankable pre-token protocol below the watchlist floor: the early rows the radar exists to find.
+// That is 40 watchlist rows + 186 early rows = 226 rows: every rankable pre-token protocol
+// the snapshot holds below the floor, plus the whole watchlist. A protocol is
 // pre-token when its index entry records no token (no market cap, no CoinGecko id, no symbol); the
 // snapshot's live-token protocols are kept apart and shown as the market's own values, never mixed into
 // the ranked board.
@@ -69,10 +71,17 @@ export const MODEL: ModelConstants = {
 };
 
 /** The model's version label: the dashboard names it and the rules quote it. */
-export const MODEL_VERSION = 'radar-2';
+export const MODEL_VERSION = 'radar-3';
 
-/** How many pre-token protocols below the watchlist floor the early radar carries, by TVL. */
-export const EARLY_ROWS = 160;
+/** How many pre-token protocols below the watchlist floor the early radar carries, by TVL.
+ * 210 is the cap, set to cover every candidate: the snapshot holds 342 pre-token protocols,
+ * 40 on the watchlist and 210 below the $50M floor. isRankable then drops the exchanges (15)
+ * and the versioned pools (9), leaving 186 early rows, so the board is 40 + 186 = 226 rows.
+ * The other 92 pre-token protocols sit above the floor but off the watchlist because the
+ * watchlist's own rule leaves them out: they are exchanges (Bybit, Robinhood) or wrapped,
+ * staked or bridged products (WBTC, Binance staked ETH, USDT0), not protocols still waiting on
+ * a launch of their own. Ranking them as launches would be wrong, so they stay off the board. */
+export const EARLY_ROWS = 210;
 
 /** How many live-token protocols the Live token view carries, by market cap. */
 export const LIVE_ROWS = 24;
