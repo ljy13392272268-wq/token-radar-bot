@@ -343,18 +343,20 @@
     var f = factors(row);
     var m = DATA.model;
     var brief = !!(opts && opts.brief);
+    var growthNote = fmtPct(row.change_7d) + ' over 7 days' + (row.change_7d !== null && row.change_7d > m.growth_cap ? ' (clamped to +' + m.growth_cap + '%)' : '');
+    var chainNote = row.chains && row.chains.length === 1 ? '1 chain' : (row.chains ? row.chains.length : 0) + ' chains';
     var rows = brief ? [
       ['TVL', '', fmtUsd(row.tvl_usd), ''],
       ['× base', m.base_multiple + '×', fmtUsd(f.base), m.base_multiple + '× of TVL'],
-      ['× growth', f.growthMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult), fmtPct(row.change_7d) + ' over 7 days'],
+      ['× growth', f.growthMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult), growthNote],
       ['× maturity', f.maturityMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult), (row.age_days === null ? m.unknown_age_days : row.age_days) + ' days'],
-      ['× chains', f.chainMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult * f.chainMult), (row.chains ? row.chains.length : 0) + ' chains'],
+      ['× chains', f.chainMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult * f.chainMult), chainNote],
     ] : [
       ['TVL, from the snapshot', '', fmtUsd(row.tvl_usd), ''],
       ['Base claim', m.base_multiple + '×', fmtUsd(f.base), m.base_multiple + '× of TVL'],
-      ['Growth', f.growthMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult), fmtPct(row.change_7d) + ' over 7 days'],
+      ['Growth', f.growthMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult), growthNote],
       ['Maturity', f.maturityMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult), (row.age_days === null ? m.unknown_age_days + ' days, the unknown-age default' : row.age_days + ' days with no token')],
-      ['Chains', f.chainMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult * f.chainMult), (row.chains ? row.chains.length : 0) + ' chains'],
+      ['Chains', f.chainMult.toFixed(4) + '×', fmtUsd(f.base * f.growthMult * f.maturityMult * f.chainMult), chainNote],
     ];
     var list = el('ol', { class: 'waterfall' }, rows.map(function (r) {
       return el('li', { class: 'wf' }, [
@@ -473,6 +475,7 @@
   function methodPage() {
     var m = DATA.model;
     var example = DATA.rows[0];
+    var early = DATA.rows.filter(function (r) { return !r.watchlist; }).sort(function (a, b) { return a.rank - b.rank; })[0];
     var f = factors(example);
     var boardMedian = medianOf(DATA.rows.map(function (r) { return r.implied_value_usd / r.tvl_usd; }));
     var liveMedian = DATA.live_mc_tvl_median;
@@ -512,14 +515,15 @@
       ]),
       el('div', { class: 'method-grid' }, [
         waterfall(example, { brief: true, title: 'A worked example', sub: 'rank 1, ' + example.name, foot: false }),
-        el('section', { class: 'card' }, [
-          el('div', { class: 'card-head' }, [el('h2', { text: 'What it does not do' })]),
-          el('ul', { class: 'notes' }, [
-            el('li', { text: 'It names no protocol: the same function scores a $5M vault and a $2.7B curator, on the snapshot\'s own fields.' }),
-            el('li', { text: 'It predicts no price, date or launch. It answers one question — if this protocol issued a token against today\'s record, what would it be worth — and the board is that answer sorted.' }),
-            el('li', { text: 'It does not rank a protocol whose token already trades: the ' + DATA.live_size + ' largest sit in the Live token tab, as the comparison the pre-token rows are priced against.' }),
-            el('li', { text: 'It does not claim a token exists where a record is silent: every row says the protocol records no token, which is the index\'s word, not proof none was ever issued.' }),
-          ]),
+        waterfall(early, { brief: true, title: 'The same function below the floor', sub: 'rank ' + early.rank + ', ' + early.name + ', the first early row', foot: false }),
+      ]),
+      el('section', { class: 'card caveats' }, [
+        el('div', { class: 'card-head' }, [el('h2', { text: 'What it does not do' })]),
+        el('ul', { class: 'notes' }, [
+          el('li', { text: 'It names no protocol: the same function scores a $5M vault and a $2.7B curator, on the snapshot\'s own fields.' }),
+          el('li', { text: 'It predicts no price, date or launch. It answers one question — if this protocol issued a token against today\'s record, what would it be worth — and the board is that answer sorted.' }),
+          el('li', { text: 'It does not rank a protocol whose token already trades: the ' + DATA.live_size + ' largest sit in the Live token tab, as the comparison the pre-token rows are priced against.' }),
+          el('li', { text: 'It does not claim a token exists where a record is silent: every row says the protocol records no token, which is the index\'s word, not proof none was ever issued.' }),
         ]),
       ]),
       el('p', { class: 'coverage-line', text: 'Coverage: ' + DATA.watchlist_size + ' watchlist protocols, all ranked, plus ' + DATA.early_size + ' pre-token protocols below the $' + Math.round(DATA.floor_usd / 1e6) + 'M floor — ' + DATA.board_size + ' rows. The ' + DATA.live_size + ' largest protocols whose token already trades are set aside with their token, as the comparison these rows are priced against.' }),

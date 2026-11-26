@@ -1,91 +1,70 @@
-# token-radar-01 — revision note (optimisation only, not submitted)
+# token-radar-01 — revision note (not submitted)
 
-Model stays **radar-3**: the formula, `impliedOf()` and the page's formula text are unchanged, so the
-page still recomputes every row to the number `board.json` carries. What changed is where the farm plan
-is written, how the base of the model is justified, and the page itself.
+Baseline: main @ `2a6efcf`. This round changes the dashboard only; the board (213 rows), the
+radar-3 model and its constants are untouched. No commit, no transcript bundle.
 
-## What changed, and which judging criterion it serves
+## Round 3 (2026-11-26): the value model, shown on a second row
 
-**1. One farm-plan engine, shared by the data and the page — criterion 3 (farm plan), criterion 1 (screenshot matches code).**
-The plan moved out of `lib/model.ts` into `dashboard/plan.js` (UMD: `window.RadarPlan` in the browser,
-`module.exports` under Node). `main.ts` imports it to write `board.json`'s `farm_steps`; `app.js` calls
-the same `planFor` to render a protocol's page. The two cannot drift: verified for all 213 rows, the page's
-plan and `board.json`'s steps are byte-identical strings.
+**The weakest criterion, as read.** Criterion 2 (the value model) was the one this entry
+argued rather than showed. The Method page stated the formula and anchored the 0.25 base to
+the snapshot's 0.246× median, but its only worked example was rank 1, Steakhouse Financial, a
+$2.75B watchlist curator. A judge could check the arithmetic on one huge row and had to take
+on faith that the same function responded to seven-day growth and age, or that it applied
+below the $50M floor — which is also criterion 1's "watchlist is the floor, never the
+ceiling" claim.
 
-Instead of one template with swapped names, the engine now has **13 families** (vault, lend, cdp, stable,
-dex, rwa, deriv, predict, stake, bridge, chain, cover, app), each with four sentences of its own: what
-to check before depositing, how to open the position, what to do weekly, how to exit. Around them are
-four record-driven steps:
+**The change.** The Method page now runs the same `factors()` and `waterfall()` twice, side
+by side:
 
-- route: the chain the record lists **first** (DefiLlama orders chains by TVL), its per-transaction gas
-  ($9 Ethereum, $0.4 Base, $0.2 Solana, $0.6 default), and a second, smaller position on the second chain;
-- age: a tiered check — under 180 days "audits and TVL history first", 180–730 "one audit covers the contract",
-  over two years "check for an open points program", missing date "read the launch post";
-- commit: the qualifying minimum, the snapshot dates, and a hold that spans them (60/45/30 days by age);
-- exit: how to get out, and what it costs.
+- rank 1, Steakhouse Financial — $2.75B TVL, −2.19% seven-day move, 543 days, 11 chains;
+  $607,521,679.
+- rank 26, Shift DeFi — the first early row, $47.6M TVL (below the $50M floor), +4,448.47%
+  seven-day move clamped to +120% (2.8000×), 45 days (0.5216×), 1 chain (1.0000×);
+  $17,378,579.
 
-Every step carries its own cost and time (`Cost: … Time: …`), so a judge reading the detail screenshot sees
-numbers, not slogans. Plans are 7 steps (single chain) or 8 (multi-chain).
+The second card makes the clamp and the maturity curve visible, and shows a below-floor
+protocol ranked 26th, ahead of 15 of the 40 watchlist rows. Both cards use the same functions
+the detail page uses, and both totals match `board.json` exactly. The other page changes are
+the "1 chains" grammar fix and `Noto Sans` named first in the body font stack, so the four
+screenshots use the same face the source names.
 
-**2. The 0.25 base is now evidence, not assertion — criterion 2 (value model).**
-No number in the formula changed. The Method page now shows *where the base comes from*: across the 119
-protocols in this snapshot that record both a token and a market cap and are not exchanges, the median market cap over TVL is
-**0.246×**; 0.25 is that median rounded. The page also states what the board actually lands on — median
-**0.17×** of TVL, below the listed market on purpose — and the detail page recomputes every row from the
-snapshot's own fields and prints whether it matches `board.json` ("the same number board.json carries").
-Verified drift over 213 rows: **0**.
+**Criterion served.** 2 (value model), with 1 (working radar / floor not ceiling) as the
+visible consequence.
 
-**3. The board became a page — criterion 4 (sortable, filterable, readable).**
-Rank badges (top 3 filled, top 10 outlined), a scope pill on every row (watchlist / early), a scope filter
-(All 213 / Watchlist 40 / Early 173), a token-status tab (pre-token / live), a category filter, search,
-sortable columns with a real sort mark, an implied-value bar, and a plan column ("8 steps"). Search keeps
-focus while typing (the old build lost it after one character).
+**Considered, not changed.**
 
-**4. A protocol's page, not a drawer — criteria 3 and 4.**
-The old detail view opened as a 520px drawer and got screenshotted from the middle of the page: no protocol
-name, steps 5–7 cut off. It is now a full page: crumbs with rank and pills, the name, category, chains and
-first-listed date, the implied value on the right, the whole plan on the left with a cost/time chip per step,
-and a rail that builds the value (TVL → base → growth → maturity → chains → implied) plus "What to watch".
+- Live-token tab with market cap and market-cap/TVL: the 24 largest live protocols by TVL
+  skew to staking and bridge receipts (Lido records 0.01× TVL, SSV 0.00×), so showing their
+  multiples would misrepresent the 0.246× median the base is built from. The tab's job is to
+  separate the populations, which its name, ticker and status already do. Kept as is.
+- A separate "model range" card: redundant with the formula notes and the two examples.
+- Re-densifying the board table: 9 rows at 1440×900 is already at the edge of readable;
+  shrinking the type would hurt criterion 5 more than it helps criterion 4.
 
-**5. Live-token protocols are visibly set aside — criterion 2 (separates the two populations).**
-A `Live token` tab lists the 24 largest protocols whose record already carries a token, with the ticker
-(LDO, ZRO, AAVE, MORPHO, …) and the note "already trades / set aside"; they never enter the ranking. The
-lede says the same thing in one line.
+## Verification record (this build)
 
-**6. The set below the floor follows the snapshot's own rules — criterion 2.**
-`isRankable` now also drops what the watchlist's own rule excludes: exchange-branded names (1) and
-names carrying a wrapped/staked/staking word (12), on top of exchanges (15) and versioned pools (9).
-That leaves **173 early rows** (`Wrapped`, `Bitget SOL`, `Japan Staked SOL` no longer rank as launches).
+- `MAKEFUN_OUTPUT_DIR=out node main.ts --input ../snapshot.json` → **exit 0**.
+  `758 protocols, 40 on the watchlist, 213 rows scored (173 early, 24 live set aside)`.
+- board: **213 rows**; ranks **1..213** unique; `implied_value_usd` monotonic non-increasing;
+  watchlist coverage **40 / 40**; every `farm_steps` **7 or 8 steps** (gate 3–12); step
+  lengths **147–286 characters** (gate 20–600).
+- plan parity page ↔ `board.json`: **0 mismatches** over 213 rows.
+- page recompute vs `board.json`: **0 mismatches**; the worked examples show
+  **$607,521,679** and **$17,378,579**, the same numbers `board.json` carries.
+- dashboard: **4 files, 64,455 bytes** (cap 65,536 text); **0** `http://` / `https://`
+  occurrences.
+- dossier: **997,559 bytes** (cap 1.5 MiB); text **64,791 / 65,536 bytes**, nothing cut;
+  **4 images**.
+- screenshots: **1440×900, 1440×947, 1440×900, 1440×1139**;
+  **161,581 / 208,606 / 153,212 / 174,961 bytes** (cap 512 KiB, long side 1440, short side ≥800).
+- `buildDossier` reproducibility: a fresh run to `/tmp/tr-out2` hashes **byte-identical**
+  (sha256 `cfa5f02e…`), dashboard and screenshot copies identical.
 
-**7. Source discipline — the gate's text cap.**
-The dashboard is 4 files, **63,828 bytes**, under the 65,536-byte text cap, so `buildDossier` shows every file
-whole — an earlier draft of this revision ran over and lost the last 22 lines of `plan.js`; this one does not. No `http`/`https` reference in any attribute,
-stylesheet or import; no protocol name in any function, branch or map key.
+## Earlier revisions (kept for the record)
 
-## Verification record (local, after the final build)
-
-- `MAKEFUN_OUTPUT_DIR=out node main.ts --input snapshot.json` → **exit 0**, `758 protocols, 40 on the watchlist, 213 rows scored (173 early, 24 live set aside)`.
-- rows **213** (gate 100–4000); ranks **1..213** unique and contiguous; `implied_value_usd` **monotonic non-increasing**.
-- watchlist coverage **40 / 40**.
-- farm steps: **7 or 8** per row (gate 3–12); step length **147–286 characters** (gate 20–600).
-- page recompute vs `board.json`: **0** mismatches over 213 rows.
-- plan parity page ↔ `board.json`: **0** mismatches over 213 rows.
-- screenshots **4**: 1440×900, 1440×936, 1440×900, 1440×932; 152 / 217 / 140 / 168 KB (cap 512 KiB, long edge ≤1440, short ≥800).
-- `dossier.json`: **989,570 bytes** (cap 1.5 MiB), text **64,164 bytes** (cap 65,536, nothing cut), 4 images.
-- dossier reproducibility: a fresh `buildDossier(out, {text_max_bytes: 65536})` hashes **byte-identical** to `out/dossier.json`.
-- dashboard: 4 files, 63,828 bytes total; 0 external URLs.
-
-## Not done, on purpose
-
-- No TVL power-law compression (alpha 0.6/0.7/0.8 were simulated earlier: the top five never move).
-- No protocols above the $50M floor added (the candidates are bridges/staking products or protocols whose
-  parent is not in the snapshot).
-- `MODEL_VERSION` still `radar-3`: the formula did not change, so `impliedOf()` and the page's formula stay as they were.
-- Screenshots were shot with headless Chromium from this build (`file://…/out/dashboard/index.html`); if the
-  page changes again they must be re-shot, and the dossier rebuilt, or `dossier_matches` fails.
-
-## Open questions
-
-- The judge's prompt describes three screenshots (board, detail, filtered). The fourth here is the Method
-  page, named `4-model.png` so the first three stay in the expected order; if only three are wanted, drop it.
-- `out/` (board, data, dossier, screenshots) is committed for reproducibility, as it already was in this repo.
+Round 1 (commit `2a6efcf`): shared plan engine `dashboard/plan.js` (13 families, 7/8 steps,
+each with Cost and Time), Method page base anchor (0.246× across 119 non-exchange protocols;
+0.214× with the nine exchange tokens counted), full-page detail, live-token tab, `isRankable`
+excluding exchanges, versioned pools and wrapped/staked names; 213 rows (40 watchlist + 173
+early). The v2 Method wording is in that commit too. Nothing in that model or board changed
+this round.
